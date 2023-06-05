@@ -24,21 +24,34 @@ const (
 	Deny    = "deny"
 )
 
-// component
 const (
-	// Catalog functionality related to plugin catalog
-	Catalog = "catalog"
+	// Address represents a network address.
+	Address = "address"
 
+	// BundleOpStatus represents a bundle operation status.
+	BundleOpStatus = "bundle_op_status"
+
+	// DiskX509CA represents a disk-based X509 CA.
+	DiskX509CA = "disk_x509_ca"
+
+	// Endpoints represents functionality related to agent/server endpoints.
 	Endpoints = "endpoints"
 
-	MetricsServer       = "metrics_server"
-	HarvesterController = "harvester_controller"
+	// FederatedBundlesSynchronizer represents the Federated Bundles Synchronizer subsystem.
+	FederatedBundlesSynchronizer = "federated_bundles_synchronizer"
 
+	// GaladrielServer represents the Galadriel server subsystem.
 	GaladrielServer = "galadriel_server"
-	HTTPApi         = "http_api"
 
-	// SubsystemName declares a field for some subsystem name (an API, module...)
+	// Network represents a network name ("tcp", "udp").
+	Network = "network"
+
+	// SpireBundleSynchronizer represents the SPIRE Bundle Synchronizer subsystem.
+	SpireBundleSynchronizer = "spire_bundle_synchronizer"
+
+	// SubsystemName represents a field for some subsystem name, such as an API or module.
 	SubsystemName = "subsystem_name"
 
-	GaladrielServerClient = "galadriel_server_client"
+	// TrustDomain tags the name of some trust domain
+	TrustDomain = "trust_domain"
 )
