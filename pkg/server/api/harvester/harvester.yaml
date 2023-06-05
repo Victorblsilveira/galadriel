@@ -1,0 +1,344 @@
+openapi: 3.0.3
+info:
+  title: Galadriel Server Harvester API - OpenAPI 3.0
+  description: |-
+    Galadriel Server Harvester API specification.
+  contact:
+    name: Github
+    url: https://github.com/HewlettPackard/galadriel
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
+servers:
+  - url: https://localhost.swagger.io/api/v3
+tags:
+  - name: Trust Bundles
+    description: Operations related to trust bundle exchanges and synchronization
+  - name: Onboard
+    description: Operations for trust domain onboarding
+  - name: Relationships
+    description: Operations related to relationship between trust domains
+
+paths:
+  /trust-domain/{trustDomainName}/bundles:
+    put:
+      tags:
+        - Trust Bundles
+      summary: Upload a new trust bundle to the server
+      operationId: BundlePut
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+      requestBody:
+        description: Bundle to be updated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutBundleRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: [ ]
+
+  /trust-domain/{trustDomainName}/bundles/sync:
+    post:
+      tags:
+        - Trust Bundles
+      summary: Synchronizes federated bundles with Galadriel Server
+      operationId: BundleSync
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+      requestBody:
+        description: Digests of all federated bundles that Trust Domain currently knows.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostBundleSyncRequest'
+        required: true
+      responses:
+        '200':
+          description: Foreign Trust Bundles updates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostBundleSyncResponse'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: [ ]
+
+  /trust-domain/{trustDomainName}/onboard:
+    get:
+      tags:
+        - Onboard
+      summary: Onboarding a new Trust Domain in the Galadriel Server
+      description: It uses a join token to authorize the harvester in the Galadriel Server and get its JWT Access Token
+      operationId: Onboard
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+        - name: joinToken
+          in: query
+          description: Join token to be used for onboarding
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns an access token to be used for authenticating harvesters on behalf of the Trust Domain.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardHarvesterResponse'
+        default:
+          $ref: '#/components/responses/Default'
+  /trust-domain/{trustDomainName}/jwt:
+    get:
+      operationId: GetNewJWTToken
+      tags:
+        - JWT Token
+      summary: Get a renewed JWT token with the same claims as the original one
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetJwtResponse'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: [ ]
+
+  /trust-domain/{trustDomainName}/relationships/{relationshipID}:
+    patch:
+      tags:
+        - Relationships
+      summary: Accept/Denies relationship requests
+      operationId: PatchRelationship
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+        - name: relationshipID
+          in: path
+          description: ID of the relationship
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+      requestBody:
+        description: Relationship status to be updated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRelationshipRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: [ ]
+
+  /trust-domain/{trustDomainName}/relationships:
+    get:
+      tags:
+        - Relationships
+      summary: List the relationships.
+      operationId: GetRelationships
+      parameters:
+        - name: trustDomainName
+          in: path
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+          description: relationship status from a Trust Domain perspective
+          required: true
+        - name: consentStatus
+          in: query
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRelationshipResponse'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: [ ]
+
+components:
+  responses:
+    Default:
+      description: Error API responses
+      content:
+        application/json:
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
+  schemas:
+    PatchRelationshipRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - consent_status
+      properties:
+        consent_status:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
+    PutBundleRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - digest
+        - trust_domain
+        - trust_bundle
+      properties:
+        trust_domain:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+        trust_bundle:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustBundle'
+        signature:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/Signature'
+        signing_certificate:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/Certificate'
+        digest:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/BundleDigest'
+    PostBundleSyncRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - state
+      properties:
+        state:
+          $ref: '#/components/schemas/BundlesDigests'
+    PostBundleSyncResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - state
+        - updates
+      properties:
+        state:
+          $ref: '#/components/schemas/BundlesDigests'
+        updates:
+          $ref: '#/components/schemas/BundlesUpdates'
+    BundlesUpdates:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/BundlesUpdatesItem'
+      example:
+        trust_domain_1: {
+          signature: "NLHJupZn8KxFoJmSiJDCP+UuoSJOlhMK1HYIjc6YP75ve15PcMJ7zq1JLRXFzXtM0zf0ScLbZ1nYYGvQmgW+GJAx5PsmSq3m1kjrx0fFJD0EDqVZhazoYIos84Pa8qG/cWe05s1rHoYY53wO231ZGktkH56KnydHD2wwefyQCpA=",
+          trust_bundle: "",
+          signing_certificate: "-----BEGIN CERTIFICATE-----
+            MIIDuzCCAqMCFH+T4VhUJm/YDc927qIA591wFjQ/MA0GCSqGSIb3DQEBCwUAMIGZ
+            MQswCQYDVQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxEDAOBgNVBAcMB0hvdXN0b24x
+            KzApBgNVBAoMIkhld2xldHQgUGFja2FyZCBFbnRlcnByaXNlIENvbXBhbnkxHjAc
+            BgNVBAsMFUhQRSBHYWxhZHJpZWwgUHJvamVjdDEbMBkGA1UEAwwSc2FtcGxlLWNy
+            ZXRpZmljYXRlMB4XDTIzMDMyMTE4MzgzOVoXDTMzMDMxODE4MzgzOVowgZkxCzAJ
+            BgNVBAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEQMA4GA1UEBwwHSG91c3RvbjErMCkG
+            A1UECgwiSGV3bGV0dCBQYWNrYXJkIEVudGVycHJpc2UgQ29tcGFueTEeMBwGA1UE
+            CwwVSFBFIEdhbGFkcmllbCBQcm9qZWN0MRswGQYDVQQDDBJzYW1wbGUtY3JldGlm
+            aWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC8/8T9U4abhKxh
+            v3xhxCSvJOaw7h/MoQjqM29iiLWZr+D2o72Nq81ZRMNPpRERoHN7z4KaboJrh5v+
+            +yQr98uCNYkkAD88WqPlXDh5hfpFBYcMaEwL2bmB+mcF/W1AZOoYol7KR5dxX+FA
+            doorl/rVwMaC2PUH4Umj4MPS/LszWCv72Gc0jhrKMAUG2pj9yZX/KKrLuR4s2wrz
+            Yx4Q21NhP7O6JrJEhEBYEU1x+urkCunucAz0J1TRBLvtzU5svpf2x0aKy6w/eyz6
+            EmTk+w8Pvx4lwoBxyarMHBALBHcg5AGVupUc7XuCN8I5lOQe4DmCR75kxFoPFQ4e
+            7vq4ZJFHAgMBAAEwDQYJKoZIhvcNAQELBQADggEBABEpKDmR8y8JRb2mSSpn2EQC
+            MdkbGX0WMQr2DK/YnrUl07+ImUmwOMbpCquOJY0YAlA68xk5/QtzfI8DfC2sDQEX
+            GwJk0jRoV2nd0VrK39zAzv692IRvry/0Hdx100mf8FkwmGoz/ccmTxS+Gy52RDR+
+            +Sb/fAAoimxW2HsXbuniA2IbwkbNMrr0+OhPbJZBO31EqdW1Zw52h9xXtcS7AuLF
+            dBbsmjWXFJEW33LDMEQ3fjZiSRcqhgfVxMIftQziEl1tV8G7QJXrikM6aouLYFSN
+            c3J4tJ0/59cCdhGX0oeRwvL3LFX8J46u1FF4cfBsnboYlMEf3YKOBOXmixaHaeg=
+            -----END CERTIFICATE-----"
+        }
+    OnboardHarvesterResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+        - trustDomainID
+        - trustDomainName
+      properties:
+        trustDomainID:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+        trustDomainName:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+        token:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
+    GetJwtResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+      properties:
+        token:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
+    GetRelationshipResponse:
+      type: array
+      items:
+        $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+      maxItems: 500
+    BundlesDigests:
+      type: object
+      additionalProperties:
+        $ref: '../../../common/api/schemas.yaml#/components/schemas/BundleDigest'
+      example:
+        trust_domain_1: "883358270705e6f74e0abe21a4cc56e82906894b111e8c9b3ac6b235930ce64d"
+        trust_domain_2: "d8ae2cb8eee5eab8c11f3b3439ea4a2a4091e06646827821ee196b7568a414cd"
+        trust_domain_3: "154f6f7f94a6027275c4ef6b3ebe0476e159bbad3d0ff0632d414bece9dce56b"
+    BundlesUpdatesItem:
+      type: object
+      additionalProperties: false
+      required:
+        - trust_bundle
+        - digest
+        - signature
+        - signing_certificate
+      properties:
+        trust_bundle:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustBundle'
+        digest:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/BundleDigest'
+        signature:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/Signature'
+        signing_certificate:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/Certificate'
+  securitySchemes:
+    harvester_auth:
+      $ref: '../../../common/api/schemas.yaml#/components/securitySchemes/harvester_auth'

@@ -1,0 +1,239 @@
+openapi: 3.0.3
+info:
+  title: Galadriel Server Admin API - OpenAPI 3.0
+  description: |-
+    Galadriel Server Management API specification.
+  contact:
+    name: Github
+    url: https://github.com/HewlettPackard/galadriel
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
+servers:
+  - url: https://localhost.swagger.io/api/v3
+tags:
+  - name: Trust Domain
+    description: A SPIFFE Trust Domain
+  - name: Relationships
+    description: A relationship is the representation of a SPIFFE Federation Relationship between two Trust Domains
+  - name: Join Token
+    description: Representation of a join token bound to a Trust Domain.
+
+paths:
+  /trust-domain/{trustDomainName}:
+    get:
+      operationId: GetTrustDomainByName
+      tags:
+        - Trust Domain
+      summary: Get a specific trust domain
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'
+        default:
+          $ref: '#/components/responses/Default'
+    put:
+      operationId: PutTrustDomainByName
+      tags:
+        - Trust Domain
+      summary: Update a specific trust domain
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'
+        default:
+          $ref: '#/components/responses/Default'
+
+  /trust-domain:
+    put:
+      operationId: PutTrustDomain
+      tags:
+        - Trust Domain
+      summary: Add a specific trust domain
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutTrustDomainRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'
+        default:
+          $ref: '#/components/responses/Default'
+
+  /relationships:
+    get:
+      operationId: GetRelationships
+      tags:
+        - Relationships
+      summary: Get relationships
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
+          description: relationship status from a Trust Domain perspective,
+        - name: trustDomainName
+          in: query
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+          description: TrustDomain
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+        default:
+          $ref: '#/components/responses/Default'
+    put:
+      operationId: PutRelationship
+      tags:
+        - Relationships
+      summary: Create a relationship request between two Trust Domains
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutRelationshipRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+        default:
+          $ref: '#/components/responses/Default'
+
+  /relationships/{relationshipID}:
+    get:
+      operationId: GetRelationshipByID
+      tags:
+        - Relationships
+      summary: Get a specific relationship
+      parameters:
+        - name: relationshipID
+          in: path
+          description: ID of the Relationship
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+        default:
+          $ref: '#/components/responses/Default'
+
+  /trust-domain/{trustDomainName}/join-token:
+    get:
+      operationId: GetJoinToken
+      tags:
+        - Join Token
+      summary: Get a join token for a specific Trust Domain
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain Name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+        - name: ttl
+          in: query
+          description: Time-to-Live (TTL) in seconds for the join token
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 86400
+            default: 3600
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinTokenResponse'
+        default:
+          $ref: '#/components/responses/Default'
+
+components:
+  responses:
+    Default:
+      description: Error API responses
+      content:
+        application/json:
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
+  schemas:
+    PutRelationshipRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - trust_domain_a_name
+        - trust_domain_b_name
+      properties:
+        trust_domain_a_name:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+        trust_domain_b_name:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+    PutTrustDomainRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+      properties:
+        description:
+          type: string
+          format: string
+          maxLength: 200
+          example: "Trust domain that represent the entity X"
+        name:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+    JoinTokenResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+      properties:
+        token:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/JoinToken'
